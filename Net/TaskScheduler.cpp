@@ -1,13 +1,14 @@
 #include "TaskScheduler.h"
 
-TaskScheduler::~TaskScheduler() = default;
-
 void TaskScheduler::Start()
 {
-    running_ = true;
-    while(running_)
-    {
-        // 处理IO事件和定时器事件
+    bool expected = false;
+
+    if (!running_.compare_exchange_strong(expected, true)) {
+        return;
+    }
+
+    while (running_.load()) {
         HandleEvent();
         timer_queue_.HandleTimerEvents();
     }
@@ -15,17 +16,25 @@ void TaskScheduler::Start()
 
 void TaskScheduler::Stop()
 {
-    running_ = false;
+    if (!running_.exchange(false)) {
+        return;
+    }
+
+    // 唤醒 epoll_wait，让线程立即退出。
+    Wakeup();
 }
 
-TimerId TaskScheduler::AddTimer(const TimerCallback& callback, uint32_t msec)
+TimerId TaskScheduler::AddTimer(
+    const TimerCallback& callback,
+    uint32_t msec)
 {
-    //在一个线程里执行，不需要加锁，因为这个函数只会在一个线程里被调用
-    return timer_queue_.AddTimer(callback, msec);
+    TimerId id = timer_queue_.AddTimer(callback, msec);
+    Wakeup();
+    return id;
 }
 
 void TaskScheduler::RemoveTimer(TimerId timer_id)
 {
-    //在一个线程里执行，不需要加锁，因为这个函数只会在一个线程里被调用
     timer_queue_.RemoveTimer(timer_id);
+    Wakeup();
 }

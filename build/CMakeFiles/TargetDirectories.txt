@@ -1,0 +1,4 @@
+/home/parallels/Desktop/CloudAssistant/build/CMakeFiles/cloud_net.dir
+/home/parallels/Desktop/CloudAssistant/build/CMakeFiles/net_test.dir
+/home/parallels/Desktop/CloudAssistant/build/CMakeFiles/edit_cache.dir
+/home/parallels/Desktop/CloudAssistant/build/CMakeFiles/rebuild_cache.dir

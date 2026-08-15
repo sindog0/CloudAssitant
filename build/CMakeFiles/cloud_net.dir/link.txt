@@ -1,0 +1,2 @@
+/usr/bin/ar qc libcloud_net.a CMakeFiles/cloud_net.dir/Acceptor.cpp.o CMakeFiles/cloud_net.dir/Buffer.cpp.o CMakeFiles/cloud_net.dir/TcpSocket.cpp.o CMakeFiles/cloud_net.dir/TcpServer.cpp.o CMakeFiles/cloud_net.dir/EventLoop.cpp.o CMakeFiles/cloud_net.dir/EpollTaskScheduler.cpp.o CMakeFiles/cloud_net.dir/PacketReader.cpp.o CMakeFiles/cloud_net.dir/PacketWriter.cpp.o CMakeFiles/cloud_net.dir/TcpConnection.cpp.o CMakeFiles/cloud_net.dir/Timer.cpp.o CMakeFiles/cloud_net.dir/TaskScheduler.cpp.o
+/usr/bin/ranlib libcloud_net.a

@@ -1,52 +1,128 @@
 #pragma once
-#include "TcpSocket.h"
+
+#include "Buffer.h"
 #include "Channel.h"
 #include "PacketReader.h"
-#include "PacketWriter.h"
-#include <memory>
 #include "TaskScheduler.h"
 
-class TcpConnection : public std::enable_shared_from_this<TcpConnection>
+#include <atomic>
+#include <cstddef>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <utility>
+
+class TcpConnection
+    : public std::enable_shared_from_this<
+          TcpConnection>
 {
 public:
-    using TcpConnectionPtr = std::shared_ptr<TcpConnection>;
-    using DisconnectCallback = std::function<void(TcpConnectionPtr)>;
-    using CloseCallback = std::function<void(TcpConnectionPtr)>;
-    using ReadCallback = std::function<bool(TcpConnectionPtr, PacketReader &)>;
+    using TcpConnectionPtr =
+        std::shared_ptr<TcpConnection>;
 
-    TcpConnection(int fd, TaskScheduler *scheduler);
+    using ReadCallback =
+        std::function<bool(
+            TcpConnectionPtr,
+            PacketReader &)>;
+
+    using CloseCallback =
+        std::function<void(
+            TcpConnectionPtr)>;
+
+    using DisconnectCallback =
+        std::function<void(
+            TcpConnectionPtr)>;
+
+    TcpConnection(
+        int socket_fd,
+        TaskScheduler *scheduler);
+
     virtual ~TcpConnection();
 
-    TaskScheduler *GetTaskScheduler() const { return scheduler_; }
-    void SetReadCallback(ReadCallback cb) { read_callback_ = std::move(cb); }
-    void SetCloseCallback(CloseCallback cb) { close_callback_ = std::move(cb); }
-    bool IsClosed() const { return closed_; }
-    int GetSocket() const { return channel_->GetSocket(); }
-    void Send(const char *data, size_t len);
-    void Send(std::shared_ptr<char> data, size_t len);
+    TcpConnection(
+        const TcpConnection &) = delete;
+
+    TcpConnection &operator=(
+        const TcpConnection &) = delete;
+
+    // 必须在 shared_ptr 创建完成，并且回调设置完成后调用。
+    void Start();
+
+    void Send(
+        const char *data,
+        std::size_t length);
+
+    void Send(
+        const std::shared_ptr<char> &data,
+        std::size_t length);
+
     void Disconnect();
 
-protected:
-    
-    void SetDisconnectCallback(DisconnectCallback cb) { disconnect_callback_ = std::move(cb); }
+    bool IsClosed() const
+    {
+        return closed_.load();
+    }
 
-protected:
-    friend class TcpServer;
+    bool IsStarted() const
+    {
+        return started_.load();
+    }
+
+    int GetSocket() const
+    {
+        return channel_
+                   ? channel_->GetSocket()
+                   : -1;
+    }
+
+    TaskScheduler *GetTaskScheduler() const
+    {
+        return scheduler_;
+    }
+
+    void SetReadCallback(
+        ReadCallback callback)
+    {
+        read_callback_ =
+            std::move(callback);
+    }
+
+    void SetCloseCallback(
+        CloseCallback callback)
+    {
+        close_callback_ =
+            std::move(callback);
+    }
+
+    void SetDisconnectCallback(
+        DisconnectCallback callback)
+    {
+        disconnect_callback_ =
+            std::move(callback);
+    }
 
 private:
-    TaskScheduler *scheduler_;
-    ReadCallback read_callback_;
-    CloseCallback close_callback_;
-    DisconnectCallback disconnect_callback_;
-    bool closed_ = false;
-    std::shared_ptr<Channel> channel_ = nullptr;
-    std::unique_ptr<Buffer> read_buffer_ = nullptr;
-    std::unique_ptr<Buffer> write_buffer_ = nullptr;
-
-    std::mutex mutex_;
-    void Close();
     void HandleRead();
     void HandleWrite();
     void HandleClose();
     void HandleError();
+
+    // 返回 true 表示本次确实执行了关闭。
+    bool CloseConnection();
+
+private:
+    TaskScheduler *scheduler_ = nullptr;
+
+    std::shared_ptr<Channel> channel_;
+    std::unique_ptr<Buffer> read_buffer_;
+    std::unique_ptr<Buffer> write_buffer_;
+
+    ReadCallback read_callback_;
+    CloseCallback close_callback_;
+    DisconnectCallback disconnect_callback_;
+
+    std::atomic_bool started_{false};
+    std::atomic_bool closed_{false};
+
+    std::mutex write_mutex_;
 };

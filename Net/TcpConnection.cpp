@@ -1,130 +1,333 @@
 #include "TcpConnection.h"
+
+#include <cerrno>
+#include <cstdio>
+
+#include <sys/socket.h>
 #include <unistd.h>
-TcpConnection::TcpConnection(int fd, TaskScheduler *scheduler)
+
+TcpConnection::TcpConnection(
+    int socket_fd,
+    TaskScheduler* scheduler)
     : scheduler_(scheduler),
-      channel_(std::make_shared<Channel>(fd)),
-      read_buffer_(std::make_unique<Buffer>()),
-      write_buffer_(std::make_unique<Buffer>())
+      channel_(
+          std::make_shared<Channel>(
+              socket_fd)),
+      read_buffer_(
+          std::make_unique<Buffer>()),
+      write_buffer_(
+          std::make_unique<Buffer>())
 {
-    channel_->SetReadCallback([this]() { HandleRead(); });
-    channel_->SetWriteCallback([this]() { HandleWrite(); });
-    channel_->SetErrorCallback([this]() { HandleError(); });
-    channel_->SetCloseCallback([this]() { HandleClose(); });
+    channel_->SetReadCallback([this]() {
+        HandleRead();
+    });
+
+    channel_->SetWriteCallback([this]() {
+        HandleWrite();
+    });
+
+    channel_->SetCloseCallback([this]() {
+        HandleClose();
+    });
+
+    channel_->SetErrorCallback([this]() {
+        HandleError();
+    });
 }
 
 TcpConnection::~TcpConnection()
 {
-    closed_ = true;
-    if(channel_ && scheduler_){
-        channel_->DisableReading();
-        channel_->DisableWriting();
-        scheduler_->RemoveChannel(channel_.get());
+    if (!closed_.exchange(true)) {
+        if (channel_ && scheduler_) {
+            channel_->DisableAll();
+            scheduler_->RemoveChannel(
+                channel_.get());
+        }
+
+        int socket_fd = GetSocket();
+        if (socket_fd >= 0) {
+            ::close(socket_fd);
+        }
     }
 }
 
-void TcpConnection::Send(const char* data, size_t len)
+void TcpConnection::Start()
 {
-    
-    if(!closed_){
-        mutex_.lock();
-        write_buffer_->Append(data, len);
-        mutex_.unlock();
-        this->HandleWrite();// 直接调用HandleWrite()，尝试立即发送数据
+    if (closed_.load() ||
+        !channel_ ||
+        !scheduler_) {
+        return;
     }
 
+    bool expected = false;
+
+    if (!started_.compare_exchange_strong(
+            expected,
+            true)) {
+        return;
+    }
+
+    channel_->EnableReading();
+    scheduler_->UpdateChannel(
+        channel_.get());
 }
 
-void TcpConnection::Send(std::shared_ptr<char> data, size_t len)
+void TcpConnection::Send(
+    const char* data,
+    std::size_t length)
 {
-    if(!closed_){
-        mutex_.lock();
-        write_buffer_->Append(data.get(), len);
-        mutex_.unlock();
-        this->HandleWrite();// 直接调用HandleWrite()，尝试立即发送数据
+    if (!data || length == 0) {
+        return;
     }
+
+    {
+        std::lock_guard<std::mutex> lock(
+            write_mutex_);
+
+        // 必须在获取锁后再次检查，防止与关闭操作竞争。
+        if (closed_.load() ||
+            !channel_ ||
+            !scheduler_) {
+            return;
+        }
+
+        write_buffer_->Append(
+            data,
+            length);
+
+        channel_->EnableWriting();
+    }
+
+    scheduler_->UpdateChannel(
+        channel_.get());
+}
+
+void TcpConnection::Send(
+    const std::shared_ptr<char>& data,
+    std::size_t length)
+{
+    if (!data) {
+        return;
+    }
+
+    Send(data.get(), length);
 }
 
 void TcpConnection::Disconnect()
 {
-    if(!closed_){
-        closed_ = true;
-        Close();
-    }
-}
+    // 保证回调执行期间对象不会销毁。
+    TcpConnectionPtr self;
 
-void TcpConnection::Close()
-{
-    if(channel_){
-        channel_->DisableReading();
-        channel_->DisableWriting();
-        scheduler_->RemoveChannel(channel_.get());
-        channel_ = nullptr;
+    try {
+        self = shared_from_this();
+    } catch (...) {
+        CloseConnection();
+        return;
     }
-    if(disconnect_callback_){
-        disconnect_callback_(shared_from_this());
+
+    if (!CloseConnection()) {
+        return;
+    }
+
+    if (disconnect_callback_) {
+        disconnect_callback_(self);
     }
 }
 
 void TcpConnection::HandleRead()
 {
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if(closed_){
-            return;
-        }
-        int bytes_read = read_buffer_->ReadFd(channel_->GetSocket());
-        if(bytes_read < 0){
-            Close();
-            return;
-        }
+    TcpConnectionPtr self;
+
+    try {
+        self = shared_from_this();
+    } catch (...) {
+        return;
     }
-    if(read_callback_){
-        PacketReader reader(*read_buffer_);
-        bool continue_reading = read_callback_(shared_from_this(), reader);
-        if(!continue_reading){
-            std::lock_guard<std::mutex> lock(mutex_);
-            Close();
+
+    if (closed_.load() ||
+        !channel_) {
+        return;
+    }
+
+    ssize_t result =
+        read_buffer_->ReadFd(
+            channel_->GetSocket());
+
+    if (result == 0) {
+        HandleClose();
+        return;
+    }
+
+    if (result < 0) {
+        if (errno == EINTR ||
+            errno == EAGAIN ||
+            errno == EWOULDBLOCK) {
+            return;
         }
+
+        HandleError();
+        return;
+    }
+
+    if (!read_callback_) {
+        return;
+    }
+
+    PacketReader reader(*read_buffer_);
+
+    bool keep_connection =
+        read_callback_(self, reader);
+
+    if (!keep_connection) {
+        HandleClose();
     }
 }
 
 void TcpConnection::HandleWrite()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if(closed_){
-        return;
-    }
-    if(write_buffer_->ReadableBytes() > 0){
-        int bytes_written = write(channel_->GetSocket(), write_buffer_->Peek(), write_buffer_->ReadableBytes());
-        if(bytes_written < 0){
-            Close();
+    bool fatal_error = false;
+
+    {
+        std::lock_guard<std::mutex> lock(
+            write_mutex_);
+
+        if (closed_.load() ||
+            !channel_ ||
+            !scheduler_) {
             return;
         }
-        write_buffer_->Retrieve(bytes_written);
+
+        while (
+            write_buffer_->ReadableBytes() > 0) {
+            ssize_t written = ::send(
+                channel_->GetSocket(),
+                write_buffer_->Peek(),
+                write_buffer_->ReadableBytes(),
+                MSG_NOSIGNAL);
+
+            if (written > 0) {
+                write_buffer_->Retrieve(
+                    static_cast<std::size_t>(
+                        written));
+                continue;
+            }
+
+            if (written < 0 &&
+                errno == EINTR) {
+                continue;
+            }
+
+            if (written < 0 &&
+                (errno == EAGAIN ||
+                 errno == EWOULDBLOCK)) {
+                break;
+            }
+
+            fatal_error = true;
+            break;
+        }
+
+        if (!fatal_error) {
+            if (write_buffer_
+                    ->ReadableBytes() == 0) {
+                channel_->DisableWriting();
+            } else {
+                channel_->EnableWriting();
+            }
+        }
     }
-    if(write_buffer_->ReadableBytes() == 0){
-        channel_->DisableWriting();
+
+    if (fatal_error) {
+        HandleError();
+        return;
     }
+
+    scheduler_->UpdateChannel(
+        channel_.get());
 }
 
 void TcpConnection::HandleClose()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if(closed_){
+    TcpConnectionPtr self;
+
+    try {
+        self = shared_from_this();
+    } catch (...) {
+        CloseConnection();
         return;
     }
-    closed_ = true;
-    Close();
-    if(close_callback_){
-        close_callback_(shared_from_this());
+
+    if (!CloseConnection()) {
+        return;
+    }
+
+    if (close_callback_) {
+        close_callback_(self);
+    }
+
+    if (disconnect_callback_) {
+        disconnect_callback_(self);
     }
 }
 
 void TcpConnection::HandleError()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
-    if(closed_){
+    TcpConnectionPtr self;
+
+    try {
+        self = shared_from_this();
+    } catch (...) {
+        CloseConnection();
         return;
     }
-    Close();
+
+    if (!CloseConnection()) {
+        return;
+    }
+
+    if (close_callback_) {
+        close_callback_(self);
+    }
+
+    if (disconnect_callback_) {
+        disconnect_callback_(self);
+    }
+}
+
+bool TcpConnection::CloseConnection()
+{
+    bool expected = false;
+
+    if (!closed_.compare_exchange_strong(
+            expected,
+            true)) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(
+        write_mutex_);
+
+    if (!channel_) {
+        return true;
+    }
+
+    int socket_fd =
+        channel_->GetSocket();
+
+    channel_->DisableAll();
+
+    if (scheduler_) {
+        scheduler_->RemoveChannel(
+            channel_.get());
+    }
+
+    if (socket_fd >= 0) {
+        ::shutdown(
+            socket_fd,
+            SHUT_RDWR);
+
+        ::close(socket_fd);
+    }
+
+    return true;
 }

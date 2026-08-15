@@ -25,6 +25,6 @@ public:
 
 private:
     std::vector<char> buffer_;
-    size_t read_index_;
-    size_t write_index_;
+    size_t read_index_ = 0;
+    size_t write_index_ = 0;
 };

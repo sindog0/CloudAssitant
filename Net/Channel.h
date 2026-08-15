@@ -1,56 +1,125 @@
 #pragma once
+
+#include <cstdint>
 #include <functional>
-#include <sys/epoll.h>
+#include <utility>
+
 class Channel
 {
 public:
     using EventCallback = std::function<void()>;
-    Channel(int fd) : sock_fd_(fd) {}
-    ~Channel() = default;
 
-    void SetReadCallback(EventCallback cb) { read_callback_ = std::move(cb); }
-    void SetWriteCallback(EventCallback cb) { write_callback_ = std::move(cb); }
-    void SetErrorCallback(EventCallback cb) { error_callback_ = std::move(cb); }
-    void SetCloseCallback(EventCallback cb) { close_callback_ = std::move(cb); }
+    enum Event : uint32_t
+    {
+        NoneEvent  = 0,
+        ReadEvent  = 1 << 0,
+        WriteEvent = 1 << 1,
+        ErrorEvent = 1 << 2,
+        CloseEvent = 1 << 3
+    };
 
-    int GetSocket() const { return sock_fd_; }
-    int GetEvents() const { return events_; }
-    void SetEvents(int events) { events_ = events; }
+    explicit Channel(int socket)
+        : socket_(socket)
+    {
+    }
 
-    void EnableReading() { events_ |= (EPOLLIN | EPOLLPRI); } // EPOLLPRI表示高优先级数据可读
-    void EnableWriting() { events_ |= EPOLLOUT; }
-    void DisableWriting() { events_ &= ~EPOLLOUT; }
-    void DisableReading() { events_ &= ~(EPOLLIN | EPOLLPRI); }
+    Channel(const Channel&) = delete;
+    Channel& operator=(const Channel&) = delete;
 
-    bool IsNoneEvent() const { return events_ == 0; }
-    bool IsWriting() const { return events_ & EPOLLOUT; }
-    bool IsReading() const { return events_ & (EPOLLIN | EPOLLPRI); }
+    int GetSocket() const
+    {
+        return socket_;
+    }
 
-    void HandleEvent(int events){
-        if(events & (EPOLLIN | EPOLLPRI)){
-            if(read_callback_){
-                read_callback_();
-            }
+    uint32_t GetEvents() const
+    {
+        return events_;
+    }
+
+    void SetReadCallback(EventCallback callback)
+    {
+        read_callback_ = std::move(callback);
+    }
+
+    void SetWriteCallback(EventCallback callback)
+    {
+        write_callback_ = std::move(callback);
+    }
+
+    void SetErrorCallback(EventCallback callback)
+    {
+        error_callback_ = std::move(callback);
+    }
+
+    void SetCloseCallback(EventCallback callback)
+    {
+        close_callback_ = std::move(callback);
+    }
+
+    void EnableReading()
+    {
+        events_ |= ReadEvent;
+    }
+
+    void EnableWriting()
+    {
+        events_ |= WriteEvent;
+    }
+
+    void DisableReading()
+    {
+        events_ &= ~ReadEvent;
+    }
+
+    void DisableWriting()
+    {
+        events_ &= ~WriteEvent;
+    }
+
+    void DisableAll()
+    {
+        events_ = NoneEvent;
+    }
+
+    bool IsReading() const
+    {
+        return (events_ & ReadEvent) != 0;
+    }
+
+    bool IsWriting() const
+    {
+        return (events_ & WriteEvent) != 0;
+    }
+
+    bool IsNoneEvent() const
+    {
+        return events_ == NoneEvent;
+    }
+
+    void HandleEvent(uint32_t active_events)
+    {
+        // 即使收到关闭事件，也可能仍有未读取数据。
+        if ((active_events & ReadEvent) && read_callback_) {
+            read_callback_();
         }
-        if(events & EPOLLOUT){
-            if(write_callback_){
-                write_callback_();
-            }
+
+        if ((active_events & WriteEvent) && write_callback_) {
+            write_callback_();
         }
-        if(events & EPOLLERR){
-            if(error_callback_){
-                error_callback_();
-            }
+
+        if ((active_events & ErrorEvent) && error_callback_) {
+            error_callback_();
         }
-        if(events & (EPOLLHUP | EPOLLRDHUP)){
-            if(close_callback_){
-                close_callback_();
-            }
+
+        if ((active_events & CloseEvent) && close_callback_) {
+            close_callback_();
         }
-    } 
+    }
+
 private:
-    int sock_fd_ = 0;
-    int events_ = 0;
+    int socket_ = -1;
+    uint32_t events_ = NoneEvent;
+
     EventCallback read_callback_;
     EventCallback write_callback_;
     EventCallback error_callback_;

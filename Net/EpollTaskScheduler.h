@@ -1,24 +1,38 @@
 #pragma once
+
 #include "TaskScheduler.h"
-#include <sys/epoll.h>
-#include <unordered_map>
+
 #include <mutex>
+#include <unordered_map>
 #include <vector>
+
+#include <sys/epoll.h>
+
 class EpollTaskScheduler : public TaskScheduler
 {
 public:
-    EpollTaskScheduler(int id = 0) : TaskScheduler(id) {epoll_fd_ = epoll_create1(0);}
+    explicit EpollTaskScheduler(int id = 0);
     ~EpollTaskScheduler() override;
 
-private:
-    void UpdateChannel(Channel *channel) override;
-    void RemoveChannel(Channel *channel) override;
+    void UpdateChannel(Channel* channel) override;
+    void RemoveChannel(Channel* channel) override;
+
+protected:
     bool HandleEvent() override;
+    void Wakeup() override;
+
 private:
-    void UpdateEpoll(int operation, Channel *channel);// 更新epoll事件
+    static uint32_t ToEpollEvents(uint32_t events);
+    static uint32_t FromEpollEvents(uint32_t events);
+
+    bool UpdateEpoll(int operation, Channel* channel);
+    void HandleWakeup();
+
 private:
     int epoll_fd_ = -1;
-    std::unordered_map<int, Channel *> channels_; // 维护一个fd到Channel的映射
-    std::vector<struct epoll_event> events_; // 用于存储epoll_wait返回的事件
-    std::mutex mutex_; // 保护channels_和events_的线程安全
+    int wakeup_fd_ = -1;
+
+    std::unordered_map<int, Channel*> channels_;
+    std::vector<epoll_event> events_;
+    std::mutex mutex_;
 };
