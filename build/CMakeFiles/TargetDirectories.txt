@@ -1,9 +1,0 @@
-/home/parallels/Desktop/CloudAssistant/build/CMakeFiles/edit_cache.dir
-/home/parallels/Desktop/CloudAssistant/build/CMakeFiles/rebuild_cache.dir
-/home/parallels/Desktop/CloudAssistant/build/Net/CMakeFiles/cloud_net.dir
-/home/parallels/Desktop/CloudAssistant/build/Net/CMakeFiles/net_test.dir
-/home/parallels/Desktop/CloudAssistant/build/Net/CMakeFiles/edit_cache.dir
-/home/parallels/Desktop/CloudAssistant/build/Net/CMakeFiles/rebuild_cache.dir
-/home/parallels/Desktop/CloudAssistant/build/RtmpServer/CMakeFiles/RtmpServer.dir
-/home/parallels/Desktop/CloudAssistant/build/RtmpServer/CMakeFiles/edit_cache.dir
-/home/parallels/Desktop/CloudAssistant/build/RtmpServer/CMakeFiles/rebuild_cache.dir
