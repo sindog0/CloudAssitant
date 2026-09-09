@@ -1,63 +1,58 @@
 #include "Timer.h"
 
-TimerId TimerQueue::AddTimer(const TimerCallback& callback, uint32_t msec)
+TimerId TimerQueue::AddTimer(const TimerEvent &event, uint32_t mesc)
 {
-    uint64_t expiration = GetTimeNow() + msec;
-    auto timer = std::make_shared<Timer>(callback, msec);
-    timer->SetExpiration(expiration);
-    timers_[++last_timer_id_] = timer;
-    events_[{expiration, last_timer_id_}] = timer;
-    return last_timer_id_;// 返回新添加的定时器ID
+    int64_t time_point = GetTimeNow();
+    TimerId timer_id = ++last_timer_id_;
+
+    auto timer = std::make_shared<Timer>(event,mesc);
+    timer->SetNextTimeOut(time_point);
+    timers_.emplace(timer_id,timer);
+    events_.emplace(std::pair<int64_t,TimerId>(time_point + mesc,timer_id),timer);
+    return timer_id;
 }
 
-void TimerQueue::RemoveTimer(TimerId timer_id)
+void TimerQueue::RemoveTimer(TimerId timerId)
 {
-    auto it = timers_.find(timer_id);
-    if (it != timers_.end())
+    auto iter = timers_.find(timerId);
+    if(iter != timers_.end())
     {
-        auto timer = it->second;
-        events_.erase({timer->GetExpiration(), timer_id});
-        timers_.erase(it);
+        int64_t timeout = iter->second->getNextTimeOut();
+        events_.erase(std::pair<int64_t,TimerId>(timeout,timerId));
+        timers_.erase(timerId);
     }
 }
 
-void TimerQueue::HandleTimerEvents()
+void TimerQueue::HandleTimerEvent()
 {
-    uint64_t now = GetTimeNow();
-    while(!events_.empty())
+    if(!timers_.empty())
     {
-        auto it = events_.begin();
-        auto timer = it->second;
-        if(timer->GetExpiration() > now)
+        int64_t timepoint = GetTimeNow();
+        while(!timers_.empty() && events_.begin()->first.first <= timepoint)
         {
-            break;
-        }
-        TimerId id = it->first.second;
-        events_.erase(it);
-
-        bool repeat = timer->callback_();
-        if(repeat)
-        {
-            timer->SetExpiration(
-                now + timer->interval_
-            );
-
-            events_.emplace(
-                std::make_pair(
-                    timer->GetExpiration(),
-                    id),
-                timer);
-        }
-        else
-        {
-            timers_.erase(id);
+            TimerId timerId = events_.begin()->first.second;
+            if(events_.begin()->first.second)
+            {
+                bool flag = events_.begin()->second->evenrt_callbak_();
+                if(flag) //反复执行
+                {
+                    events_.begin()->second->SetNextTimeOut(timepoint);
+                    auto timePtr = std::move(events_.begin()->second);
+                    events_.erase(events_.begin());
+                    events_.emplace(std::pair<int64_t,TimerId>(timePtr->getNextTimeOut(),timerId),timePtr);
+                }
+                else //一次性
+                {
+                    events_.erase(events_.begin());
+                    timers_.erase(timerId);
+                } 
+            }
         }
     }
 }
 
-uint64_t TimerQueue::GetTimeNow() const
+int64_t TimerQueue::GetTimeNow()
 {
-    auto now = std::chrono::steady_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());// 获取自纪元以来的毫秒数
-    return duration.count();// 返回当前时间的毫秒数
+    auto time_point = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(time_point.time_since_epoch()).count();
 }

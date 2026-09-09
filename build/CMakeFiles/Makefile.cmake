@@ -7,7 +7,9 @@ set(CMAKE_DEPENDS_GENERATOR "Unix Makefiles")
 # The top level Makefile was generated from the following files:
 set(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
+  "/home/parallels/Desktop/CloudAssistant/CMakeLists.txt"
   "/home/parallels/Desktop/CloudAssistant/Net/CMakeLists.txt"
+  "/home/parallels/Desktop/CloudAssistant/RtmpServer/CMakeLists.txt"
   "CMakeFiles/3.28.3/CMakeCXXCompiler.cmake"
   "CMakeFiles/3.28.3/CMakeSystem.cmake"
   "/usr/share/cmake-3.28/Modules/CMakeCXXInformation.cmake"
@@ -43,10 +45,13 @@ set(CMAKE_MAKEFILE_OUTPUTS
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
   "CMakeFiles/CMakeDirectoryInformation.cmake"
+  "Net/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "RtmpServer/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/cloud_net.dir/DependInfo.cmake"
-  "CMakeFiles/net_test.dir/DependInfo.cmake"
+  "Net/CMakeFiles/cloud_net.dir/DependInfo.cmake"
+  "Net/CMakeFiles/net_test.dir/DependInfo.cmake"
+  "RtmpServer/CMakeFiles/RtmpServer.dir/DependInfo.cmake"
   )

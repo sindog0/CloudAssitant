@@ -1,246 +1,89 @@
 #include "EpollTaskScheduler.h"
-
-#include <cerrno>
-#include <cstdint>
-#include <cstdio>
-#include <stdexcept>
-
-#include <sys/eventfd.h>
-#include <unistd.h>
+#include <sys/epoll.h>
+#include <errno.h>
+#include <iostream>
 
 EpollTaskScheduler::EpollTaskScheduler(int id)
-    : TaskScheduler(id),
-      events_(64)
+    :TaskScheduler(id)
 {
-    epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
-    if (epoll_fd_ < 0) {
-        throw std::runtime_error("epoll_create1 failed");
-    }
-
-    wakeup_fd_ = eventfd(
-        0,
-        EFD_NONBLOCK | EFD_CLOEXEC);
-
-    if (wakeup_fd_ < 0) {
-        close(epoll_fd_);
-        epoll_fd_ = -1;
-        throw std::runtime_error("eventfd failed");
-    }
-
-    epoll_event event{};
-    event.data.fd = wakeup_fd_;
-    event.events = EPOLLIN;
-
-    if (epoll_ctl(
-            epoll_fd_,
-            EPOLL_CTL_ADD,
-            wakeup_fd_,
-            &event) < 0) {
-        close(wakeup_fd_);
-        close(epoll_fd_);
-        wakeup_fd_ = -1;
-        epoll_fd_ = -1;
-        throw std::runtime_error("add wakeup fd failed");
-    }
+    //创建epoll
+    epollfd_ = epoll_create(1024);
 }
 
 EpollTaskScheduler::~EpollTaskScheduler()
 {
-    if (wakeup_fd_ >= 0) {
-        close(wakeup_fd_);
-        wakeup_fd_ = -1;
-    }
-
-    if (epoll_fd_ >= 0) {
-        close(epoll_fd_);
-        epoll_fd_ = -1;
-    }
 }
 
-uint32_t EpollTaskScheduler::ToEpollEvents(uint32_t events)
+void EpollTaskScheduler::UpdateChannel(ChannelPtr channel)
 {
-    uint32_t result = EPOLLRDHUP;
-
-    if (events & Channel::ReadEvent) {
-        result |= EPOLLIN | EPOLLPRI;
-    }
-
-    if (events & Channel::WriteEvent) {
-        result |= EPOLLOUT;
-    }
-
-    return result;
-}
-
-uint32_t EpollTaskScheduler::FromEpollEvents(uint32_t events)
-{
-    uint32_t result = Channel::NoneEvent;
-
-    if (events & (EPOLLIN | EPOLLPRI)) {
-        result |= Channel::ReadEvent;
-    }
-
-    if (events & EPOLLOUT) {
-        result |= Channel::WriteEvent;
-    }
-
-    if (events & EPOLLERR) {
-        result |= Channel::ErrorEvent;
-    }
-
-    if (events & (EPOLLHUP | EPOLLRDHUP)) {
-        result |= Channel::CloseEvent;
-    }
-
-    return result;
-}
-
-bool EpollTaskScheduler::UpdateEpoll(
-    int operation,
-    Channel* channel)
-{
-    epoll_event event{};
-    event.data.fd = channel->GetSocket();
-    event.events = ToEpollEvents(channel->GetEvents());
-
-    if (epoll_ctl(
-            epoll_fd_,
-            operation,
-            channel->GetSocket(),
-            &event) < 0) {
-        std::perror("epoll_ctl");
-        return false;
-    }
-
-    return true;
-}
-
-void EpollTaskScheduler::UpdateChannel(Channel* channel)
-{
-    if (!channel) {
-        return;
-    }
-
     std::lock_guard<std::mutex> lock(mutex_);
-
-    int socket = channel->GetSocket();
-    auto iterator = channels_.find(socket);
-
-    if (channel->IsNoneEvent()) {
-        if (iterator != channels_.end()) {
-            UpdateEpoll(EPOLL_CTL_DEL, channel);
-            channels_.erase(iterator);
+    int fd = channel->GetSocket();
+    if(channels_.find(fd) != channels_.end())
+    {
+        if(channel->IsNoneEvent())
+        {
+            Update(EPOLL_CTL_DEL,channel);
+            channels_.erase(fd);
         }
-        return;
-    }
-
-    if (iterator == channels_.end()) {
-        if (UpdateEpoll(EPOLL_CTL_ADD, channel)) {
-            channels_[socket] = channel;
+        else{
+            Update(EPOLL_CTL_MOD,channel);
         }
-    } else {
-        UpdateEpoll(EPOLL_CTL_MOD, channel);
     }
-
-    Wakeup();
+    else
+    {
+        if(!channel->IsNoneEvent())
+        {
+            channels_.emplace(fd,channel);
+            Update(EPOLL_CTL_ADD,channel);
+        }
+    }
 }
 
-void EpollTaskScheduler::RemoveChannel(Channel* channel)
+void EpollTaskScheduler::RmoveChannel(ChannelPtr &channel)
 {
-    if (!channel) {
-        return;
-    }
-
     std::lock_guard<std::mutex> lock(mutex_);
-
-    auto iterator = channels_.find(channel->GetSocket());
-    if (iterator == channels_.end()) {
-        return;
+    int fd = channel->GetSocket();
+    if(channels_.find(fd) != channels_.end())
+    {
+        Update(EPOLL_CTL_DEL,channel);
+        channels_.erase(fd);
     }
-
-    UpdateEpoll(EPOLL_CTL_DEL, channel);
-    channels_.erase(iterator);
-
-    Wakeup();
 }
 
 bool EpollTaskScheduler::HandleEvent()
 {
-    int count = epoll_wait(
-        epoll_fd_,
-        events_.data(),
-        static_cast<int>(events_.size()),
-        1000);
+    struct epoll_event events[512] = {0};
+    int num_events = -1;
 
-    if (count < 0) {
-        if (errno == EINTR) {
-            return true;
-        }
-
-        std::perror("epoll_wait");
-        return false;
-    }
-
-    for (int index = 0; index < count; ++index) {
-        int socket = events_[index].data.fd;
-
-        if (socket == wakeup_fd_) {
-            HandleWakeup();
-            continue;
-        }
-
-        Channel* channel = nullptr;
-
+    num_events = epoll_wait(epollfd_,events,512,0);
+    if(num_events < 0)
+    {
+        if(errno != EINTR)
         {
-            std::lock_guard<std::mutex> lock(mutex_);
-
-            auto iterator = channels_.find(socket);
-            if (iterator != channels_.end()) {
-                channel = iterator->second;
-            }
-        }
-
-        if (channel) {
-            channel->HandleEvent(
-                FromEpollEvents(events_[index].events));
+            return false;
         }
     }
-
-    if (count == static_cast<int>(events_.size())) {
-        events_.resize(events_.size() * 2);
+    for(int n = 0; n < num_events; n++)
+    {
+        if(events[n].data.ptr)
+        {
+            ((Channel*)events[n].data.ptr)->HandleEvent(events[n].events);
+        }
     }
-
     return true;
 }
 
-void EpollTaskScheduler::Wakeup()
+void EpollTaskScheduler::Update(int operation, ChannelPtr &Channel)
 {
-    if (wakeup_fd_ < 0) {
-        return;
+    struct epoll_event event = {0};
+    if(operation != EPOLL_CTL_DEL)
+    {
+        event.data.ptr = Channel.get();
+        event.events = Channel->GetEvents();
     }
 
-    uint64_t value = 1;
-    ssize_t result = write(
-        wakeup_fd_,
-        &value,
-        sizeof(value));
-
-    if (result < 0 && errno != EAGAIN) {
-        std::perror("eventfd write");
-    }
-}
-
-void EpollTaskScheduler::HandleWakeup()
-{
-    uint64_t value = 0;
-
-    while (read(
-               wakeup_fd_,
-               &value,
-               sizeof(value)) > 0) {
-    }
-
-    if (errno != EAGAIN) {
-        // eventfd 已经被读空时一般返回 EAGAIN。
+    if(::epoll_ctl(epollfd_,operation,Channel->GetSocket(),&event) < 0)
+    {
+        std::cout << "修改epoll事件失败";
     }
 }

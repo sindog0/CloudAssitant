@@ -57,7 +57,7 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/parallels/Desktop/CloudAssistant/Net
+CMAKE_SOURCE_DIR = /home/parallels/Desktop/CloudAssistant
 
 # The top-level build directory on which CMake was run.
 CMAKE_BINARY_DIR = /home/parallels/Desktop/CloudAssistant/build
@@ -126,7 +126,7 @@ cloud_net: cmake_check_build_system
 
 # fast build rule for target.
 cloud_net/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/build
+	$(MAKE) $(MAKESILENT) -f Net/CMakeFiles/cloud_net.dir/build.make Net/CMakeFiles/cloud_net.dir/build
 .PHONY : cloud_net/fast
 
 #=============================================================================
@@ -139,296 +139,21 @@ net_test: cmake_check_build_system
 
 # fast build rule for target.
 net_test/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/net_test.dir/build.make CMakeFiles/net_test.dir/build
+	$(MAKE) $(MAKESILENT) -f Net/CMakeFiles/net_test.dir/build.make Net/CMakeFiles/net_test.dir/build
 .PHONY : net_test/fast
 
-Acceptor.o: Acceptor.cpp.o
-.PHONY : Acceptor.o
-
-# target to build an object file
-Acceptor.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Acceptor.cpp.o
-.PHONY : Acceptor.cpp.o
-
-Acceptor.i: Acceptor.cpp.i
-.PHONY : Acceptor.i
-
-# target to preprocess a source file
-Acceptor.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Acceptor.cpp.i
-.PHONY : Acceptor.cpp.i
-
-Acceptor.s: Acceptor.cpp.s
-.PHONY : Acceptor.s
-
-# target to generate assembly for a file
-Acceptor.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Acceptor.cpp.s
-.PHONY : Acceptor.cpp.s
-
-Buffer.o: Buffer.cpp.o
-.PHONY : Buffer.o
-
-# target to build an object file
-Buffer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Buffer.cpp.o
-.PHONY : Buffer.cpp.o
-
-Buffer.i: Buffer.cpp.i
-.PHONY : Buffer.i
-
-# target to preprocess a source file
-Buffer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Buffer.cpp.i
-.PHONY : Buffer.cpp.i
-
-Buffer.s: Buffer.cpp.s
-.PHONY : Buffer.s
-
-# target to generate assembly for a file
-Buffer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Buffer.cpp.s
-.PHONY : Buffer.cpp.s
-
-EpollTaskScheduler.o: EpollTaskScheduler.cpp.o
-.PHONY : EpollTaskScheduler.o
-
-# target to build an object file
-EpollTaskScheduler.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/EpollTaskScheduler.cpp.o
-.PHONY : EpollTaskScheduler.cpp.o
-
-EpollTaskScheduler.i: EpollTaskScheduler.cpp.i
-.PHONY : EpollTaskScheduler.i
-
-# target to preprocess a source file
-EpollTaskScheduler.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/EpollTaskScheduler.cpp.i
-.PHONY : EpollTaskScheduler.cpp.i
-
-EpollTaskScheduler.s: EpollTaskScheduler.cpp.s
-.PHONY : EpollTaskScheduler.s
-
-# target to generate assembly for a file
-EpollTaskScheduler.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/EpollTaskScheduler.cpp.s
-.PHONY : EpollTaskScheduler.cpp.s
-
-EventLoop.o: EventLoop.cpp.o
-.PHONY : EventLoop.o
-
-# target to build an object file
-EventLoop.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/EventLoop.cpp.o
-.PHONY : EventLoop.cpp.o
-
-EventLoop.i: EventLoop.cpp.i
-.PHONY : EventLoop.i
-
-# target to preprocess a source file
-EventLoop.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/EventLoop.cpp.i
-.PHONY : EventLoop.cpp.i
-
-EventLoop.s: EventLoop.cpp.s
-.PHONY : EventLoop.s
-
-# target to generate assembly for a file
-EventLoop.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/EventLoop.cpp.s
-.PHONY : EventLoop.cpp.s
-
-PacketReader.o: PacketReader.cpp.o
-.PHONY : PacketReader.o
-
-# target to build an object file
-PacketReader.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/PacketReader.cpp.o
-.PHONY : PacketReader.cpp.o
-
-PacketReader.i: PacketReader.cpp.i
-.PHONY : PacketReader.i
-
-# target to preprocess a source file
-PacketReader.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/PacketReader.cpp.i
-.PHONY : PacketReader.cpp.i
-
-PacketReader.s: PacketReader.cpp.s
-.PHONY : PacketReader.s
-
-# target to generate assembly for a file
-PacketReader.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/PacketReader.cpp.s
-.PHONY : PacketReader.cpp.s
-
-PacketWriter.o: PacketWriter.cpp.o
-.PHONY : PacketWriter.o
-
-# target to build an object file
-PacketWriter.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/PacketWriter.cpp.o
-.PHONY : PacketWriter.cpp.o
-
-PacketWriter.i: PacketWriter.cpp.i
-.PHONY : PacketWriter.i
-
-# target to preprocess a source file
-PacketWriter.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/PacketWriter.cpp.i
-.PHONY : PacketWriter.cpp.i
-
-PacketWriter.s: PacketWriter.cpp.s
-.PHONY : PacketWriter.s
-
-# target to generate assembly for a file
-PacketWriter.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/PacketWriter.cpp.s
-.PHONY : PacketWriter.cpp.s
-
-TaskScheduler.o: TaskScheduler.cpp.o
-.PHONY : TaskScheduler.o
-
-# target to build an object file
-TaskScheduler.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TaskScheduler.cpp.o
-.PHONY : TaskScheduler.cpp.o
-
-TaskScheduler.i: TaskScheduler.cpp.i
-.PHONY : TaskScheduler.i
-
-# target to preprocess a source file
-TaskScheduler.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TaskScheduler.cpp.i
-.PHONY : TaskScheduler.cpp.i
-
-TaskScheduler.s: TaskScheduler.cpp.s
-.PHONY : TaskScheduler.s
-
-# target to generate assembly for a file
-TaskScheduler.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TaskScheduler.cpp.s
-.PHONY : TaskScheduler.cpp.s
-
-TcpConnection.o: TcpConnection.cpp.o
-.PHONY : TcpConnection.o
-
-# target to build an object file
-TcpConnection.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpConnection.cpp.o
-.PHONY : TcpConnection.cpp.o
-
-TcpConnection.i: TcpConnection.cpp.i
-.PHONY : TcpConnection.i
-
-# target to preprocess a source file
-TcpConnection.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpConnection.cpp.i
-.PHONY : TcpConnection.cpp.i
-
-TcpConnection.s: TcpConnection.cpp.s
-.PHONY : TcpConnection.s
-
-# target to generate assembly for a file
-TcpConnection.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpConnection.cpp.s
-.PHONY : TcpConnection.cpp.s
-
-TcpServer.o: TcpServer.cpp.o
-.PHONY : TcpServer.o
-
-# target to build an object file
-TcpServer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpServer.cpp.o
-.PHONY : TcpServer.cpp.o
-
-TcpServer.i: TcpServer.cpp.i
-.PHONY : TcpServer.i
-
-# target to preprocess a source file
-TcpServer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpServer.cpp.i
-.PHONY : TcpServer.cpp.i
-
-TcpServer.s: TcpServer.cpp.s
-.PHONY : TcpServer.s
-
-# target to generate assembly for a file
-TcpServer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpServer.cpp.s
-.PHONY : TcpServer.cpp.s
-
-TcpSocket.o: TcpSocket.cpp.o
-.PHONY : TcpSocket.o
-
-# target to build an object file
-TcpSocket.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpSocket.cpp.o
-.PHONY : TcpSocket.cpp.o
-
-TcpSocket.i: TcpSocket.cpp.i
-.PHONY : TcpSocket.i
-
-# target to preprocess a source file
-TcpSocket.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpSocket.cpp.i
-.PHONY : TcpSocket.cpp.i
-
-TcpSocket.s: TcpSocket.cpp.s
-.PHONY : TcpSocket.s
-
-# target to generate assembly for a file
-TcpSocket.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/TcpSocket.cpp.s
-.PHONY : TcpSocket.cpp.s
-
-Timer.o: Timer.cpp.o
-.PHONY : Timer.o
-
-# target to build an object file
-Timer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Timer.cpp.o
-.PHONY : Timer.cpp.o
-
-Timer.i: Timer.cpp.i
-.PHONY : Timer.i
-
-# target to preprocess a source file
-Timer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Timer.cpp.i
-.PHONY : Timer.cpp.i
-
-Timer.s: Timer.cpp.s
-.PHONY : Timer.s
-
-# target to generate assembly for a file
-Timer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cloud_net.dir/build.make CMakeFiles/cloud_net.dir/Timer.cpp.s
-.PHONY : Timer.cpp.s
-
-main.o: main.cpp.o
-.PHONY : main.o
-
-# target to build an object file
-main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/net_test.dir/build.make CMakeFiles/net_test.dir/main.cpp.o
-.PHONY : main.cpp.o
-
-main.i: main.cpp.i
-.PHONY : main.i
-
-# target to preprocess a source file
-main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/net_test.dir/build.make CMakeFiles/net_test.dir/main.cpp.i
-.PHONY : main.cpp.i
-
-main.s: main.cpp.s
-.PHONY : main.s
-
-# target to generate assembly for a file
-main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/net_test.dir/build.make CMakeFiles/net_test.dir/main.cpp.s
-.PHONY : main.cpp.s
+#=============================================================================
+# Target rules for targets named RtmpServer
+
+# Build rule for target.
+RtmpServer: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 RtmpServer
+.PHONY : RtmpServer
+
+# fast build rule for target.
+RtmpServer/fast:
+	$(MAKE) $(MAKESILENT) -f RtmpServer/CMakeFiles/RtmpServer.dir/build.make RtmpServer/CMakeFiles/RtmpServer.dir/build
+.PHONY : RtmpServer/fast
 
 # Help Target
 help:
@@ -438,44 +163,9 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... RtmpServer"
 	@echo "... cloud_net"
 	@echo "... net_test"
-	@echo "... Acceptor.o"
-	@echo "... Acceptor.i"
-	@echo "... Acceptor.s"
-	@echo "... Buffer.o"
-	@echo "... Buffer.i"
-	@echo "... Buffer.s"
-	@echo "... EpollTaskScheduler.o"
-	@echo "... EpollTaskScheduler.i"
-	@echo "... EpollTaskScheduler.s"
-	@echo "... EventLoop.o"
-	@echo "... EventLoop.i"
-	@echo "... EventLoop.s"
-	@echo "... PacketReader.o"
-	@echo "... PacketReader.i"
-	@echo "... PacketReader.s"
-	@echo "... PacketWriter.o"
-	@echo "... PacketWriter.i"
-	@echo "... PacketWriter.s"
-	@echo "... TaskScheduler.o"
-	@echo "... TaskScheduler.i"
-	@echo "... TaskScheduler.s"
-	@echo "... TcpConnection.o"
-	@echo "... TcpConnection.i"
-	@echo "... TcpConnection.s"
-	@echo "... TcpServer.o"
-	@echo "... TcpServer.i"
-	@echo "... TcpServer.s"
-	@echo "... TcpSocket.o"
-	@echo "... TcpSocket.i"
-	@echo "... TcpSocket.s"
-	@echo "... Timer.o"
-	@echo "... Timer.i"
-	@echo "... Timer.s"
-	@echo "... main.o"
-	@echo "... main.i"
-	@echo "... main.s"
 .PHONY : help
 
 

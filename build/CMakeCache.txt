@@ -122,7 +122,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=CloudNet
+CMAKE_PROJECT_NAME:STATIC=CloudAssistant
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -190,13 +190,31 @@ CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
 //Value Computed by CMake
-CloudNet_BINARY_DIR:STATIC=/home/parallels/Desktop/CloudAssistant/build
+CloudAssistant_BINARY_DIR:STATIC=/home/parallels/Desktop/CloudAssistant/build
 
 //Value Computed by CMake
-CloudNet_IS_TOP_LEVEL:STATIC=ON
+CloudAssistant_IS_TOP_LEVEL:STATIC=ON
+
+//Value Computed by CMake
+CloudAssistant_SOURCE_DIR:STATIC=/home/parallels/Desktop/CloudAssistant
+
+//Value Computed by CMake
+CloudNet_BINARY_DIR:STATIC=/home/parallels/Desktop/CloudAssistant/build/Net
+
+//Value Computed by CMake
+CloudNet_IS_TOP_LEVEL:STATIC=OFF
 
 //Value Computed by CMake
 CloudNet_SOURCE_DIR:STATIC=/home/parallels/Desktop/CloudAssistant/Net
+
+//Value Computed by CMake
+RtmpServer_BINARY_DIR:STATIC=/home/parallels/Desktop/CloudAssistant/build/RtmpServer
+
+//Value Computed by CMake
+RtmpServer_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+RtmpServer_SOURCE_DIR:STATIC=/home/parallels/Desktop/CloudAssistant/RtmpServer
 
 
 ########################
@@ -269,7 +287,7 @@ CMAKE_GENERATOR_TOOLSET:INTERNAL=
 CMAKE_HAVE_LIBC_PTHREAD:INTERNAL=1
 //Source directory with the top level CMakeLists.txt file for this
 // project
-CMAKE_HOME_DIRECTORY:INTERNAL=/home/parallels/Desktop/CloudAssistant/Net
+CMAKE_HOME_DIRECTORY:INTERNAL=/home/parallels/Desktop/CloudAssistant
 //Install .so files without execute permission.
 CMAKE_INSTALL_SO_NO_EXE:INTERNAL=1
 //ADVANCED property for variable: CMAKE_LINKER
@@ -289,7 +307,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=3
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

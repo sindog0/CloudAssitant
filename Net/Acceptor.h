@@ -1,60 +1,24 @@
-#pragma once
-
-#include "Channel.h"
-#include "TaskScheduler.h"
-#include "TcpSocket.h"
-
-#include <atomic>
-#include <cstdint>
 #include <functional>
 #include <memory>
-#include <string>
-#include <utility>
+#include "Channel.h"
+#include "TcpSocket.h"
+
+class EventLoop;
+
+typedef std::function<void(int)> NewConnectCallback;
 
 class Acceptor
 {
 public:
-    using NewConnectionCallback =
-        std::function<void(int socket_fd)>;
-
-    explicit Acceptor(
-        TaskScheduler* scheduler);
-
+    Acceptor(EventLoop* eventloop);
     ~Acceptor();
-
-    Acceptor(const Acceptor&) = delete;
-    Acceptor& operator=(const Acceptor&) = delete;
-
-    bool Listen(
-        const std::string& ip,
-        uint16_t port,
-        int backlog = 128);
-
-    void Stop();
-
-    bool IsListening() const
-    {
-        return listening_.load();
-    }
-
-    void SetNewConnectionCallback(
-        NewConnectionCallback callback)
-    {
-        new_connection_callback_ =
-            std::move(callback);
-    }
-
+    inline void SetNewConnectCallback(const NewConnectCallback& cb) {new_connectCb_ = cb;};
+    int Listen(std::string ip,uint16_t port);
+    void Close();
 private:
-    void HandleRead();
-
-private:
-    TaskScheduler* scheduler_ = nullptr;
-
-    TcpSocket server_socket_;
-    std::shared_ptr<Channel> channel_;
-
-    NewConnectionCallback
-        new_connection_callback_;
-
-    std::atomic_bool listening_{false};
+    void OnAccept();
+    EventLoop* loop_ = nullptr;
+    ChannelPtr channelPtr_ = nullptr;;
+    std::shared_ptr<TcpSocket> tcp_socket_;
+    NewConnectCallback new_connectCb_;
 };

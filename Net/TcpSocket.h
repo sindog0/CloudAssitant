@@ -1,52 +1,32 @@
-#pragma once
-
-#include <cstdint>
+#ifndef _TCPSOCKET_H_
+#define _TCPSOCKET_H_
 #include <string>
+
+class SocketUtil
+{
+public:
+    static void SetNonBlock(int sockfd);
+    static void SetBlock(int sockfd);
+    static void SetReuseAddr(int sockfd);
+    static void SetReusePort(int sockfd);
+    static void SetKeepAlive(int sockfd);
+    static void SetSendBufSize(int sockfd, int size);
+    static void SetRecvBufSize(int sockfd, int size);
+};
 
 class TcpSocket
 {
 public:
     TcpSocket();
-    explicit TcpSocket(int socket_fd);
-    ~TcpSocket();
-
-    TcpSocket(const TcpSocket&) = delete;
-    TcpSocket& operator=(const TcpSocket&) = delete;
-
-    TcpSocket(TcpSocket&& other) noexcept;
-    TcpSocket& operator=(TcpSocket&& other) noexcept;
-
-    bool Bind(const std::string& ip, uint16_t port);
-    bool Listen(int backlog = 128);
-
-    // timeout_ms <= 0 表示立即返回。
-    bool Connect(
-        const std::string& ip,
-        uint16_t port,
-        int timeout_ms = 3000);
-
-    int Accept();
-
-    void ShutdownWrite();
+    virtual ~TcpSocket();
+    int Create();
+    bool Bind(std::string ip, short port);
+    bool Listen(int backlog);
+    int  Accept();
     void Close();
-
-    bool IsValid() const
-    {
-        return socket_fd_ >= 0;
-    }
-
-    int GetSocket() const
-    {
-        return socket_fd_;
-    }
-
-    // 放弃当前对象对 socket 的所有权。
-    int Release();
-
+    void ShutdownWrite();
+    int GetSocket() const { return sockfd_; }
 private:
-    static int CreateSocket();
-    static bool SetNonBlocking(int socket_fd);
-
-private:
-    int socket_fd_ = -1;
+    int sockfd_ = -1;
 };
+#endif

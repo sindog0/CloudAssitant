@@ -1,127 +1,88 @@
-#pragma once
-
-#include <cstdint>
+#ifndef _CHANNEL_H_
+#define _CHANNEL_H_
 #include <functional>
-#include <utility>
+#include <memory>
 
-class Channel
+enum EventType
+{
+	EVENT_NONE   = 0,
+	EVENT_IN     = 1,
+	EVENT_PRI    = 2,		
+	EVENT_OUT    = 4,
+	EVENT_ERR    = 8,
+	EVENT_HUP    = 16,
+};
+
+class Channel 
 {
 public:
-    using EventCallback = std::function<void()>;
+	typedef std::function<void()> EventCallback;
+	Channel(int sockfd) 
+		: sockfd_(sockfd){}
+		
+	~Channel() {};
+    
+	inline void SetReadCallback(const EventCallback& cb)
+	{ read_callback_ = cb; }
 
-    enum Event : uint32_t
-    {
-        NoneEvent  = 0,
-        ReadEvent  = 1 << 0,
-        WriteEvent = 1 << 1,
-        ErrorEvent = 1 << 2,
-        CloseEvent = 1 << 3
-    };
+	inline void SetWriteCallback(const EventCallback& cb)
+	{ write_callback_ = cb; }
 
-    explicit Channel(int socket)
-        : socket_(socket)
-    {
-    }
+	inline void SetCloseCallback(const EventCallback& cb)
+	{ close_callback_ = cb; }
 
-    Channel(const Channel&) = delete;
-    Channel& operator=(const Channel&) = delete;
+	inline void SetErrorCallback(const EventCallback& cb)
+	{ error_callback_ = cb; }
 
-    int GetSocket() const
-    {
-        return socket_;
-    }
+	inline int GetSocket() const { return sockfd_; }
 
-    uint32_t GetEvents() const
-    {
-        return events_;
-    }
+	inline int  GetEvents() const { return events_; }
+	inline void SetEvents(int events) { events_ = events; }
+    
+	inline void EnableReading() 
+	{ events_ |= EVENT_IN; }
 
-    void SetReadCallback(EventCallback callback)
-    {
-        read_callback_ = std::move(callback);
-    }
+	inline void EnableWriting() 
+	{ events_ |= EVENT_OUT; }
+    
+	inline void DisableReading() 
+	{ events_ &= ~EVENT_IN; }
+    
+	inline void DisableWriting() 
+	{ events_ &= ~EVENT_OUT; }
+       
+	inline bool IsNoneEvent() const { return events_ == EVENT_NONE; }
+	inline bool IsWriting() const { return (events_ & EVENT_OUT) != 0; }
+	inline bool IsReading() const { return (events_ & EVENT_IN) != 0; }
+    
+	void HandleEvent(int events)
+	{	
+		if (events & (EVENT_PRI | EVENT_IN)) {
+			read_callback_();
+		}
 
-    void SetWriteCallback(EventCallback callback)
-    {
-        write_callback_ = std::move(callback);
-    }
+		if (events & EVENT_OUT) {
+			write_callback_();
+		}
+        
+		if (events & EVENT_HUP) {
+			close_callback_();
+			return ;
+		}
 
-    void SetErrorCallback(EventCallback callback)
-    {
-        error_callback_ = std::move(callback);
-    }
-
-    void SetCloseCallback(EventCallback callback)
-    {
-        close_callback_ = std::move(callback);
-    }
-
-    void EnableReading()
-    {
-        events_ |= ReadEvent;
-    }
-
-    void EnableWriting()
-    {
-        events_ |= WriteEvent;
-    }
-
-    void DisableReading()
-    {
-        events_ &= ~ReadEvent;
-    }
-
-    void DisableWriting()
-    {
-        events_ &= ~WriteEvent;
-    }
-
-    void DisableAll()
-    {
-        events_ = NoneEvent;
-    }
-
-    bool IsReading() const
-    {
-        return (events_ & ReadEvent) != 0;
-    }
-
-    bool IsWriting() const
-    {
-        return (events_ & WriteEvent) != 0;
-    }
-
-    bool IsNoneEvent() const
-    {
-        return events_ == NoneEvent;
-    }
-
-    void HandleEvent(uint32_t active_events)
-    {
-        // 即使收到关闭事件，也可能仍有未读取数据。
-        if ((active_events & ReadEvent) && read_callback_) {
-            read_callback_();
-        }
-
-        if ((active_events & WriteEvent) && write_callback_) {
-            write_callback_();
-        }
-
-        if ((active_events & ErrorEvent) && error_callback_) {
-            error_callback_();
-        }
-
-        if ((active_events & CloseEvent) && close_callback_) {
-            close_callback_();
-        }
-    }
+		if (events & (EVENT_ERR)) {
+			error_callback_();
+		}
+	}
 
 private:
-    int socket_ = -1;
-    uint32_t events_ = NoneEvent;
-
-    EventCallback read_callback_;
-    EventCallback write_callback_;
-    EventCallback error_callback_;
-    EventCallback close_callback_;
+	EventCallback read_callback_  = []{};
+	EventCallback write_callback_ = []{};
+	EventCallback close_callback_ = []{};
+	EventCallback error_callback_ = []{};
+	int sockfd_ = 0;
+	int events_ = 0;    
 };
+
+typedef std::shared_ptr<Channel> ChannelPtr;
+#endif

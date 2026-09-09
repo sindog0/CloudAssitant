@@ -1,40 +1,39 @@
 #include "TaskScheduler.h"
 
+TaskScheduler::TaskScheduler(int id)
+    :id_(id)
+    ,is_shutdown_(false)
+{
+}
+
+TaskScheduler::~TaskScheduler()
+{
+}
+
 void TaskScheduler::Start()
 {
-    bool expected = false;
-
-    if (!running_.compare_exchange_strong(expected, true)) {
-        return;
+    is_shutdown_ = false;
+    while (!is_shutdown_)
+    {
+        //处理定时事件
+        this->timer_queue_.HandleTimerEvent();
+        //处理IO事件
+        this->HandleEvent();
     }
-
-    while (running_.load()) {
-        HandleEvent();
-        timer_queue_.HandleTimerEvents();
-    }
+    
 }
 
 void TaskScheduler::Stop()
 {
-    if (!running_.exchange(false)) {
-        return;
-    }
-
-    // 唤醒 epoll_wait，让线程立即退出。
-    Wakeup();
+    is_shutdown_ = true;
 }
 
-TimerId TaskScheduler::AddTimer(
-    const TimerCallback& callback,
-    uint32_t msec)
+TimerId TaskScheduler::AddTimer(const TimerEvent &event, uint32_t mesc)
 {
-    TimerId id = timer_queue_.AddTimer(callback, msec);
-    Wakeup();
-    return id;
+    return timer_queue_.AddTimer(event,mesc);
 }
 
-void TaskScheduler::RemoveTimer(TimerId timer_id)
+void TaskScheduler::RemvoTimer(TimerId timerId)
 {
-    timer_queue_.RemoveTimer(timer_id);
-    Wakeup();
+    timer_queue_.RemoveTimer(timerId);
 }

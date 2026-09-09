@@ -1,68 +1,99 @@
 #include "EventLoop.h"
 
-#include <algorithm>
-
 EventLoop::EventLoop(uint32_t num_threads)
-    : num_threads_(std::max<uint32_t>(1, num_threads))
+    :index_(1)
+    ,num_threads_(num_threads)
 {
-    Loop();
+    this->Loop();
 }
 
 EventLoop::~EventLoop()
 {
-    Quit();
+    this->Quit();
+}
+
+std::shared_ptr<TaskScheduler> EventLoop::GetTaskSchduler()
+{
+    if(task_schdulers_.size() == 1)
+    {
+        return task_schdulers_.at(0);
+    }
+    else
+    {
+        auto task_schduler = task_schdulers_.at(index_);
+        index_++;
+        if(index_ >= task_schdulers_.size())
+        {
+            index_ = 0;
+        }
+        return task_schduler;
+    }
+    return nullptr;
+}
+
+TimerId EventLoop::AddTimer(const TimerEvent &event, uint32_t mesc)
+{
+    if(task_schdulers_.size() > 0)
+    {
+        return task_schdulers_[0]->AddTimer(event,mesc);
+    }
+    return 0;
+}
+
+void EventLoop::RemvoTimer(TimerId timerId)
+{
+    if(task_schdulers_.size() > 0)
+    {
+        task_schdulers_[0]->RemvoTimer(timerId);
+    }
+}
+
+void EventLoop::UpdateChannel(ChannelPtr channel)
+{
+    if(task_schdulers_.size() > 0)
+    {
+        task_schdulers_[0]->UpdateChannel(channel);
+    }
+}
+
+void EventLoop::RmoveChannel(ChannelPtr &channel)
+{
+    if(task_schdulers_.size() > 0)
+    {
+        task_schdulers_[0]->RmoveChannel(channel);
+    }
 }
 
 void EventLoop::Loop()
 {
-    if (!schedulers_.empty()) {
-        return;
+    if(!task_schdulers_.empty())
+    {
+        return ;
     }
 
-    schedulers_.reserve(num_threads_);
-    threads_.reserve(num_threads_);
-
-    for (uint32_t index = 0;
-         index < num_threads_;
-         ++index) {
-        auto scheduler =
-            std::make_shared<EpollTaskScheduler>(
-                static_cast<int>(index));
-
-        schedulers_.push_back(scheduler);
-
-        threads_.emplace_back([scheduler]() {
-            scheduler->Start();
-        });
+    for(uint32_t n = 0; n < num_threads_; n++)
+    {
+        std::shared_ptr<TaskScheduler> task_schduler_ptr(new EpollTaskScheduler(n));
+        task_schdulers_.push_back(task_schduler_ptr);
+        std::shared_ptr<std::thread> thread(new std::thread(&TaskScheduler::Start,task_schduler_ptr.get()));
+        thread->native_handle();
+        threads_.push_back(thread);
     }
 }
 
 void EventLoop::Quit()
 {
-    for (const auto& scheduler : schedulers_) {
-        scheduler->Stop();
+    for(auto iter : task_schdulers_)
+    {
+        iter->Stop();
     }
-
-    for (auto& thread : threads_) {
-        if (thread.joinable()) {
-            thread.join();
+    for(auto iter : threads_)
+    {
+        if(iter->joinable())
+        {
+            iter->join();
         }
     }
-
+    task_schdulers_.clear();
     threads_.clear();
-    schedulers_.clear();
-}
-
-std::shared_ptr<TaskScheduler>
-EventLoop::GetTaskScheduler()
-{
-    if (schedulers_.empty()) {
-        return nullptr;
-    }
-
-    uint32_t index =
-        next_scheduler_.fetch_add(1) %
-        static_cast<uint32_t>(schedulers_.size());
-
-    return schedulers_[index];
 }

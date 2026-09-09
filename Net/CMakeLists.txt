@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 3.16)
 
 project(CloudNet LANGUAGES CXX)
 
@@ -10,13 +9,12 @@ find_package(Threads REQUIRED)
 
 add_library(cloud_net STATIC
     Acceptor.cpp
-    Buffer.cpp
+    BufferReader.cpp
+    BufferWriter.cpp
     TcpSocket.cpp
     TcpServer.cpp
     EventLoop.cpp
     EpollTaskScheduler.cpp
-    PacketReader.cpp
-    PacketWriter.cpp
     TcpConnection.cpp
     Timer.cpp
     TaskScheduler.cpp
@@ -24,7 +22,7 @@ add_library(cloud_net STATIC
 
 target_include_directories(cloud_net
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
 
 target_link_libraries(cloud_net
