@@ -6,3 +6,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(Net)
 add_subdirectory(RtmpServer)
+add_subdirectory(SigServer)
