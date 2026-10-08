@@ -14,9 +14,9 @@ public:
     void Start();
     void Stop();
     TimerId AddTimer(const TimerEvent& event,uint32_t mesc);
-    void RemvoTimer(TimerId timerId);
+    void RemoveTimer(TimerId timerId);
     virtual void UpdateChannel(ChannelPtr channel){};
-    virtual void RmoveChannel(ChannelPtr& channel){};
+    virtual void RemoveChannel(ChannelPtr& channel){};
     virtual bool HandleEvent(){return false;}
     inline int GetId()const{return id_;}
 private:

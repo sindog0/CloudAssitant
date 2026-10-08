@@ -4,12 +4,15 @@
 #include <cstdint>
 #include <string>
 
-uint32_t ReadUint32BE(char* data);
-uint32_t ReadUint32LE(char* data);
-uint32_t ReadUint24BE(char* data);
-uint32_t ReadUint24LE(char* data);
-uint16_t ReadUint16BE(char* data);
-uint16_t ReadUint16LE(char* data);
+uint32_t ReadUint32BE(const char* data);
+uint32_t ReadUint32LE(const char* data);
+uint32_t ReadUint24BE(const char* data);
+uint32_t ReadUint24LE(const char* data);
+uint16_t ReadUint16BE(const char* data);
+uint16_t ReadUint16LE(const char* data);
+inline uint8_t ReadUint8(const char* data){
+    return static_cast<uint8_t>(static_cast<unsigned char>(*data));
+}
 
 class BufferReader
 {

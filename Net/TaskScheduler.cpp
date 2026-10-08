@@ -33,7 +33,7 @@ TimerId TaskScheduler::AddTimer(const TimerEvent &event, uint32_t mesc)
     return timer_queue_.AddTimer(event,mesc);
 }
 
-void TaskScheduler::RemvoTimer(TimerId timerId)
+void TaskScheduler::RemoveTimer(TimerId timerId)
 {
     timer_queue_.RemoveTimer(timerId);
 }

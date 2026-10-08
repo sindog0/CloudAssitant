@@ -45,7 +45,7 @@ void Acceptor::Close()
 {
     if(tcp_socket_->GetSocket() > 0)
     {
-        loop_->RmoveChannel(channelPtr_);
+        loop_->RemoveChannel(channelPtr_);
         tcp_socket_->Close();
     }
 }

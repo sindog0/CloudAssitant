@@ -40,11 +40,11 @@ TimerId EventLoop::AddTimer(const TimerEvent &event, uint32_t mesc)
     return 0;
 }
 
-void EventLoop::RemvoTimer(TimerId timerId)
+void EventLoop::RemoveTimer(TimerId timerId)
 {
     if(task_schdulers_.size() > 0)
     {
-        task_schdulers_[0]->RemvoTimer(timerId);
+        task_schdulers_[0]->RemoveTimer(timerId);
     }
 }
 
@@ -56,11 +56,11 @@ void EventLoop::UpdateChannel(ChannelPtr channel)
     }
 }
 
-void EventLoop::RmoveChannel(ChannelPtr &channel)
+void EventLoop::RemoveChannel(ChannelPtr &channel)
 {
     if(task_schdulers_.size() > 0)
     {
-        task_schdulers_[0]->RmoveChannel(channel);
+        task_schdulers_[0]->RemoveChannel(channel);
     }
 }
 

@@ -3,12 +3,16 @@
 #include <memory>
 #include <queue>
 
-void WriteUint32BE(char* p,uint32_t value);
-void WriteUint32LE(char* p,uint32_t value);
-void WriteUint24BE(char* p,uint32_t value);
-void WriteUint24LE(char* p,uint32_t value);
-void WriteUint16BE(char* p,uint32_t value);
-void WriteUint16LE(char* p,uint32_t value);
+void WriteUint32BE(char *p, uint32_t value);
+void WriteUint32LE(char *p, uint32_t value);
+void WriteUint24BE(char *p, uint32_t value);
+void WriteUint24LE(char *p, uint32_t value);
+void WriteUint16BE(char *p, uint32_t value);
+void WriteUint16LE(char *p, uint32_t value);
+inline void WriteUint8(char *p, uint8_t value)
+{
+	p[0] = static_cast<char>(value);
+}
 
 class BufferWriter
 {
@@ -16,28 +20,34 @@ public:
 	BufferWriter(int capacity = kMaxQueueLength);
 	~BufferWriter() {}
 
-	bool Append(std::shared_ptr<char> data, uint32_t size, uint32_t index=0);
-	bool Append(const char* data, uint32_t size, uint32_t index=0);
+	bool Append(std::shared_ptr<char> data, uint32_t size, uint32_t index = 0);
+	bool Append(const char *data, uint32_t size, uint32_t index = 0);
 	int Send(int sockfd);
 
-	bool IsEmpty() const 
-	{ return buffer_.empty(); }
+	bool IsEmpty() const
+	{
+		return buffer_.empty();
+	}
 
-	bool IsFull() const 
-	{ return ((int)buffer_.size() >= max_queue_length_ ? true : false); }
+	bool IsFull() const
+	{
+		return ((int)buffer_.size() >= max_queue_length_ ? true : false);
+	}
 
-	uint32_t Size() const 
-	{ return (uint32_t)buffer_.size(); }
-	
+	uint32_t Size() const
+	{
+		return (uint32_t)buffer_.size();
+	}
+
 private:
-	typedef struct 
+	typedef struct
 	{
 		std::shared_ptr<char> data;
 		uint32_t size;
 		uint32_t writeIndex;
 	} Packet;
 
-	std::queue<Packet> buffer_;  		
+	std::queue<Packet> buffer_;
 	int max_queue_length_ = 0;
 	static const int kMaxQueueLength = 10000;
 };

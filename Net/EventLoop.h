@@ -10,9 +10,9 @@ public:
     EventLoop& operator = (const EventLoop&) = delete;
     std::shared_ptr<TaskScheduler> GetTaskSchduler();
     TimerId AddTimer(const TimerEvent& event,uint32_t mesc);
-    void RemvoTimer(TimerId timerId);
+    void RemoveTimer(TimerId timerId);
     void UpdateChannel(ChannelPtr channel);
-    void RmoveChannel(ChannelPtr& channel);
+    void RemoveChannel(ChannelPtr& channel);
     void Loop();
     void Quit();
 private:

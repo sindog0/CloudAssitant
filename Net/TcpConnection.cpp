@@ -150,7 +150,7 @@ void TcpConnection::Close()
     if(!is_closed_)
     {
         is_closed_ = true;
-        task_schduler_->RmoveChannel(channel_);
+        task_schduler_->RemoveChannel(channel_);
         if(closeCb_)
         {
             closeCb_(shared_from_this());
